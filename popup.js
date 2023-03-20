@@ -140,24 +140,28 @@ auth.onAuthStateChanged((user) => {
         const problemId = match ? match[1] : null;
         console.log(problemId);
         // return problemId;
-
-        const hintRef = db.collection("hints").doc(problemId);
-        console.log(problemId);
-        hintRef
-          .get()
-          .then((doc) => {
-            console.log(doc);
-            if (doc.exists) {
+        if (problemId) {
+          const hintRef = db.collection("hints").doc(problemId);
+          console.log(problemId);
+          hintRef
+            .get()
+            .then((doc) => {
               console.log(doc);
-              const hints = doc.data().hints;
-              showHint(hints);
-            } else {
-              showHint(null);
-            }
-          })
-          .catch((error) => {
-            console.error("Error getting hint:", error);
-          });
+              if (doc.exists) {
+                console.log(doc);
+                const hints = doc.data().hints;
+                showHint(hints);
+              } else {
+                showHint(null);
+              }
+            })
+            .catch((error) => {
+              console.error("Error getting hint:", error);
+            });
+        } else {
+          hintContainer.innerHTML =
+            "Please navigate to a LeetCode problem page to use this extension.";
+        }
       });
     });
 
