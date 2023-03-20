@@ -43,6 +43,37 @@ function showGetHint() {
   hintContainer.textContent = "";
 }
 
+// function showHint(hints) {
+//   hideElements();
+//   heading.textContent = "LeetAssist";
+//   hintContainer.style.display = "block";
+//   addHintButton.style.display = "block";
+//   paragraph.textContent =
+//     "If you would like to contribute, you can add a hint.";
+//   console.log(hints);
+//   if (hints && hints.length > 0) {
+//     hints.forEach((hint, index) => {
+//       const hintDiv = document.createElement("div");
+//       hintDiv.classList.add("hint");
+//       const hintNumber = document.createElement("span");
+//       hintNumber.classList.add("hint-number");
+//       hintNumber.textContent = `${index + 1}.`;
+//       const hintText = document.createElement("span");
+//       hintText.classList.add("hint-text");
+//       hintText.textContent = hint.text;
+//       const hintScore = document.createElement("span");
+//       hintScore.classList.add("hint-score");
+//       hintScore.textContent = hint.score;
+//       hintDiv.appendChild(hintNumber);
+//       hintDiv.appendChild(hintText);
+//       hintDiv.appendChild(hintScore);
+//       hintContainer.appendChild(hintDiv);
+//     });
+//   } else {
+//     hintContainer.textContent = "Sorry, no hint available.";
+//   }
+// }
+
 function showHint(hints) {
   hideElements();
   heading.textContent = "LeetAssist";
@@ -53,25 +84,122 @@ function showHint(hints) {
   console.log(hints);
   if (hints && hints.length > 0) {
     hints.forEach((hint, index) => {
+      let oneup = false,
+        onedown = false;
       const hintDiv = document.createElement("div");
       hintDiv.classList.add("hint");
+
       const hintNumber = document.createElement("span");
       hintNumber.classList.add("hint-number");
       hintNumber.textContent = `${index + 1}.`;
+
       const hintText = document.createElement("span");
       hintText.classList.add("hint-text");
       hintText.textContent = hint.text;
+
       const hintScore = document.createElement("span");
       hintScore.classList.add("hint-score");
       hintScore.textContent = hint.score;
+
+      const upButton = document.createElement("button");
+      // upButton.style = "margin : 10px";
+      upButton.classList.add("hint-up-button");
+      upButton.textContent = "+";
+      upButton.addEventListener("click", () => {
+        updateHintScore(hint, parseInt(hint.score) + 1);
+        if (!oneup) {
+          hintScore.textContent = parseInt(hint.score) + 1;
+          upButton.disabled = true;
+          oneup = true;
+        }
+      });
+
+      const downButton = document.createElement("button");
+      downButton.classList.add("hint-down-button");
+      downButton.textContent = "-";
+      downButton.addEventListener("click", () => {
+        updateHintScore(hint, parseInt(hint.score) - 1);
+        if (!onedown) {
+          hintScore.textContent = parseInt(hint.score) - 1;
+          downButton.disabled = true;
+          onedown = true;
+        }
+      });
+
       hintDiv.appendChild(hintNumber);
       hintDiv.appendChild(hintText);
       hintDiv.appendChild(hintScore);
+      hintDiv.appendChild(upButton);
+      hintDiv.appendChild(downButton);
+
       hintContainer.appendChild(hintDiv);
     });
   } else {
     hintContainer.textContent = "Sorry, no hint available.";
   }
+}
+
+function updateHintScore(hint, newScore) {
+  const tabsQuery = { active: true, currentWindow: true };
+  chrome.tabs.query(tabsQuery, (tabs) => {
+    const url = tabs[0].url;
+    console.log(url);
+
+    const regex = /\/problems\/(.+)\//;
+    const match = url.match(regex);
+    const problemId = match ? match[1] : null;
+    console.log(problemId);
+
+    const hintRef = db.collection("hints").doc(problemId);
+    const updatedHints = hintRef
+      .update({
+        hints: firebase.firestore.FieldValue.arrayRemove(hint),
+      })
+      .then(() => {
+        hint.score = newScore;
+        const updatedHints = hintRef.update({
+          hints: firebase.firestore.FieldValue.arrayUnion(hint),
+        });
+        console.log(updatedHints);
+        // showHint(hint);
+        // const problemId = getProblemIdFromUrl();
+        // const tabsQuery = { active: true, currentWindow: true };
+        // chrome.tabs.query(tabsQuery, (tabs) => {
+        //   const url = tabs[0].url;
+        //   console.log(url);
+
+        //   const regex = /\/problems\/(.+)\//;
+        //   const match = url.match(regex);
+        //   const problemId = match ? match[1] : null;
+        //   console.log(problemId);
+        //   // return problemId;
+        //   if (problemId) {
+        //     const hintRef = db.collection("hints").doc(problemId);
+        //     console.log(problemId);
+        //     hintRef
+        //       .get()
+        //       .then((doc) => {
+        //         console.log(doc);
+        //         if (doc.exists) {
+        //           console.log(doc);
+        //           const hints = doc.data().hints;
+        //           showHint(hints);
+        //         } else {
+        //           showHint(null);
+        //         }
+        //       })
+        //       .catch((error) => {
+        //         console.error("Error getting hint:", error);
+        //       });
+        //   } else {
+        //     hintContainer.innerHTML =
+        //       "Please navigate to a LeetCode problem page to use this extension.";
+        //   }
+        // });
+
+        //
+      });
+  });
 }
 
 function addHint() {
