@@ -89,7 +89,6 @@ function showHint(hints) {
   addHintButton.style.display = "block";
   paragraph.textContent =
     "If you would like to contribute, you can add a hint.";
-  console.log(hints);
   if (hints && hints.length > 0) {
     hints.forEach((hint, index) => {
       const hintDiv = document.createElement("div");
@@ -152,7 +151,6 @@ function showPrerequisite(prerequisites) {
   addPrerequisitesButton.style.display = "block";
   paragraph_Prerequisites.textContent =
     "If you would like to contribute, you can add a Prerequisite Ques.";
-  console.log(prerequisites);
   if (prerequisites && prerequisites.length > 0) {
     prerequisites.forEach((Prerequisite, index) => {
       const prerequisitediv = document.createElement("div");
@@ -210,12 +208,10 @@ function updatePrerequisiteScore(prerequisite, newScore, button) {
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
     const url = tabs[0].url;
-    console.log(url);
 
     const regex = /\/problems\/(.+)\//;
     const match = url.match(regex);
     const problemId = match ? match[1] : null;
-    console.log(problemId);
 
     const prerequisiteRef = db.collection("prerequisites").doc(problemId);
 
@@ -244,7 +240,6 @@ function updatePrerequisiteScore(prerequisite, newScore, button) {
               userIds: firebase.firestore.FieldValue.arrayUnion(userId), // Add the hint's userid to the userids array
             });
             button.textContent = newScore;
-            console.log(updatedprerequisites);
             return false;
           });
       }
@@ -257,12 +252,10 @@ function updateHintScore(hint, newScore, button) {
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
     const url = tabs[0].url;
-    console.log(url);
 
     const regex = /\/problems\/(.+)\//;
     const match = url.match(regex);
     const problemId = match ? match[1] : null;
-    console.log(problemId);
 
     const hintRef = db.collection("hints").doc(problemId);
 
@@ -289,7 +282,6 @@ function updateHintScore(hint, newScore, button) {
               userIds: firebase.firestore.FieldValue.arrayUnion(userId), // Add the hint's userid to the userids array
             });
 
-            console.log(updatedHints);
             button.textContent = newScore;
             return false;
           });
@@ -311,12 +303,10 @@ function addHint() {
     const tabsQuery = { active: true, currentWindow: true };
     chrome.tabs.query(tabsQuery, (tabs) => {
       const url = tabs[0].url;
-      console.log(url);
 
       const regex = /\/problems\/(.+)\//;
       const match = url.match(regex);
       const problemId = match ? match[1] : null;
-      console.log(problemId);
       const hintRef = db.collection("hints").doc(problemId);
       hintRef.get().then((doc) => {
         if (doc.exists) {
@@ -383,12 +373,10 @@ function addPrerequisite() {
     const tabsQuery = { active: true, currentWindow: true };
     chrome.tabs.query(tabsQuery, (tabs) => {
       const url = tabs[0].url;
-      console.log(url);
 
       const regex = /\/problems\/(.+)\//;
       const match = url.match(regex);
       const problemId = match ? match[1] : null;
-      console.log(problemId);
       const hintRef = db.collection("prerequisites").doc(problemId);
       hintRef.get().then((doc) => {
         if (doc.exists) {
@@ -445,50 +433,14 @@ function addPrerequisite() {
   }
 }
 
-// function addHint() {
-//   const hintText = prompt("Enter hint:");
-//   if (hintText) {
-//     const userId = auth.currentUser.uid;
-//     const hint = {
-//       text: hintText,
-//       score: 0,
-//       userId: userId,
-//     };
-
-//     const tabsQuery = { active: true, currentWindow: true };
-//     chrome.tabs.query(tabsQuery, (tabs) => {
-//       const url = tabs[0].url;
-//       console.log(url);
-
-//       const regex = /\/problems\/(.+)\//;
-//       const match = url.match(regex);
-//       const problemId = match ? match[1] : null;
-//       console.log(problemId);
-//       const hintRef = db.collection("hints").doc(problemId);
-//       hintRef
-//         .update({
-//           hints: firebase.firestore.FieldValue.arrayUnion(hint),
-//         })
-//         .then(() => {
-//           alert("Hint added successfully!");
-//         })
-//         .catch((error) => {
-//           console.error("Error adding hint:", error);
-//         });
-//     });
-//   }
-// }
-
 function getProblemIdFromUrl() {
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
     const url = tabs[0].url;
-    console.log(url);
 
     const regex = /\/problems\/(.+)\//;
     const match = url.match(regex);
     const problemId = match ? match[1] : null;
-    console.log(problemId);
     return problemId;
   });
 }
@@ -503,22 +455,17 @@ auth.onAuthStateChanged((user) => {
       const tabsQuery = { active: true, currentWindow: true };
       chrome.tabs.query(tabsQuery, (tabs) => {
         const url = tabs[0].url;
-        console.log(url);
 
         const regex = /\/problems\/(.+)\//;
         const match = url.match(regex);
         const problemId = match ? match[1] : null;
-        console.log(problemId);
         // return problemId;
         if (problemId) {
           const hintRef = db.collection("hints").doc(problemId);
-          console.log(problemId);
           hintRef
             .get()
             .then((doc) => {
-              console.log(doc);
               if (doc.exists) {
-                console.log(doc);
                 const hints = doc.data().hints;
                 showHint(hints);
               } else {
@@ -544,22 +491,17 @@ auth.onAuthStateChanged((user) => {
       const tabsQuery = { active: true, currentWindow: true };
       chrome.tabs.query(tabsQuery, (tabs) => {
         const url = tabs[0].url;
-        console.log(url);
 
         const regex = /\/problems\/(.+)\//;
         const match = url.match(regex);
         const problemId = match ? match[1] : null;
-        console.log(problemId);
         // return problemId;
         if (problemId) {
           const hintRef = db.collection("prerequisites").doc(problemId);
-          console.log(problemId);
           hintRef
             .get()
             .then((doc) => {
-              console.log(doc);
               if (doc.exists) {
-                console.log(doc);
                 const prerequisites = doc.data().prerequisites;
                 showPrerequisite(prerequisites);
               } else {
