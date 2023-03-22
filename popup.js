@@ -8,6 +8,8 @@ firebase.initializeApp(firebaseConfig);
 
 const auth = firebase.auth();
 const db = firebase.firestore();
+let hintupdownbuttondisable = false,
+  prerequisiteupdownbuttondisable = false;
 
 const heading = document.getElementById("heading");
 const loginButton = document.getElementById("loginButton");
@@ -90,8 +92,6 @@ function showHint(hints) {
   console.log(hints);
   if (hints && hints.length > 0) {
     hints.forEach((hint, index) => {
-      let oneup = false,
-        onedown = false;
       const hintDiv = document.createElement("div");
       hintDiv.classList.add("hint");
 
@@ -111,24 +111,34 @@ function showHint(hints) {
       upButton.classList.add("hint-up-button");
       upButton.textContent = "+";
       upButton.addEventListener("click", () => {
-        updateHintScore(hint, parseInt(hint.score) + 1);
-        if (!oneup) {
-          hintScore.textContent = parseInt(hint.score) + 1;
-          upButton.disabled = true;
-          oneup = true;
-        }
+        hintupdownbuttondisable = updateHintScore(
+          hint,
+          parseInt(hint.score) + 1
+        );
+        hintupdownbuttondisable.then(() => {
+          if (!hintupdownbuttondisable) {
+            hintScore.textContent = parseInt(hint.score) + 1;
+            // upButton.disabled = true;
+            hintupdownbuttondisable = true;
+          }
+        });
       });
 
       const downButton = document.createElement("button");
       downButton.classList.add("hint-down-button");
       downButton.textContent = "-";
       downButton.addEventListener("click", () => {
-        updateHintScore(hint, parseInt(hint.score) - 1);
-        if (!onedown) {
-          hintScore.textContent = parseInt(hint.score) - 1;
-          downButton.disabled = true;
-          onedown = true;
-        }
+        hintupdownbuttondisable = updateHintScore(
+          hint,
+          parseInt(hint.score) - 1
+        );
+        hintupdownbuttondisable.then(() => {
+          if (!hintupdownbuttondisable) {
+            hintScore.textContent = parseInt(hint.score) - 1;
+            // downButton.disabled = true;
+            hintupdownbuttondisable = true;
+          }
+        });
       });
 
       hintDiv.appendChild(hintNumber);
@@ -238,6 +248,7 @@ function updatePrerequisiteScore(prerequisite, newScore) {
 }
 
 function updateHintScore(hint, newScore) {
+  const userId = auth.currentUser.uid;
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
     const url = tabs[0].url;
@@ -249,17 +260,35 @@ function updateHintScore(hint, newScore) {
     console.log(problemId);
 
     const hintRef = db.collection("hints").doc(problemId);
-    const updatedHints = hintRef
-      .update({
-        hints: firebase.firestore.FieldValue.arrayRemove(hint),
-      })
-      .then(() => {
-        hint.score = newScore;
-        const updatedHints = hintRef.update({
-          hints: firebase.firestore.FieldValue.arrayUnion(hint),
-        });
-        console.log(updatedHints);
-      });
+
+    // Retrieve the userids array from the Firestore document
+    hintRef.get().then((doc) => {
+      if (doc.exists) {
+        const userids = doc.data().userIds || [];
+
+        // Check if the hint's userid matches any of the values in the userids array
+        if (userids.includes(userId)) {
+          alert("You have already voted");
+          return true;
+        }
+
+        // Update the score for the hint
+        const updatedHints = hintRef
+          .update({
+            hints: firebase.firestore.FieldValue.arrayRemove(hint),
+          })
+          .then(() => {
+            hint.score = newScore;
+            const updatedHints = hintRef.update({
+              hints: firebase.firestore.FieldValue.arrayUnion(hint),
+              userIds: firebase.firestore.FieldValue.arrayUnion(userId), // Add the hint's userid to the userids array
+            });
+
+            console.log(updatedHints);
+            return false;
+          });
+      }
+    });
   });
 }
 
