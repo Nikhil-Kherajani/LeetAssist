@@ -178,7 +178,7 @@ function showPrerequisite(prerequisites) {
       upButton.classList.add("prerequisite-up-button");
       upButton.textContent = "+";
       upButton.addEventListener("click", () => {
-        updateHintScore(Prerequisite, parseInt(Prerequisite.score) + 1);
+        updatePrerequisiteScore(Prerequisite, parseInt(Prerequisite.score) + 1);
         if (!oneup) {
           prerequisiteScore.textContent = parseInt(Prerequisite.score) + 1;
           upButton.disabled = true;
@@ -190,7 +190,7 @@ function showPrerequisite(prerequisites) {
       downButton.classList.add("prerequisite-down-button");
       downButton.textContent = "-";
       downButton.addEventListener("click", () => {
-        updateHintScore(Prerequisite, parseInt(Prerequisite.score) - 1);
+        updatePrerequisiteScore(Prerequisite, parseInt(Prerequisite.score) - 1);
         if (!onedown) {
           prerequisiteScore.textContent = parseInt(Prerequisite.score) - 1;
           downButton.disabled = true;
@@ -211,6 +211,32 @@ function showPrerequisite(prerequisites) {
   }
 }
 
+function updatePrerequisiteScore(prerequisite, newScore) {
+  const tabsQuery = { active: true, currentWindow: true };
+  chrome.tabs.query(tabsQuery, (tabs) => {
+    const url = tabs[0].url;
+    console.log(url);
+
+    const regex = /\/problems\/(.+)\//;
+    const match = url.match(regex);
+    const problemId = match ? match[1] : null;
+    console.log(problemId);
+
+    const prerequisiteRef = db.collection("prerequisites").doc(problemId);
+    const updatedprerequisites = prerequisiteRef
+      .update({
+        prerequisites: firebase.firestore.FieldValue.arrayRemove(prerequisite),
+      })
+      .then(() => {
+        prerequisite.score = newScore;
+        const updatedprerequisites = prerequisiteRef.update({
+          prerequisites: firebase.firestore.FieldValue.arrayUnion(prerequisite),
+        });
+        console.log(updatedprerequisites);
+      });
+  });
+}
+
 function updateHintScore(hint, newScore) {
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
@@ -222,15 +248,15 @@ function updateHintScore(hint, newScore) {
     const problemId = match ? match[1] : null;
     console.log(problemId);
 
-    const hintRef = db.collection("prerequisites").doc(problemId);
+    const hintRef = db.collection("hints").doc(problemId);
     const updatedHints = hintRef
       .update({
-        prerequisites: firebase.firestore.FieldValue.arrayRemove(hint),
+        hints: firebase.firestore.FieldValue.arrayRemove(hint),
       })
       .then(() => {
         hint.score = newScore;
         const updatedHints = hintRef.update({
-          prerequisites: firebase.firestore.FieldValue.arrayUnion(hint),
+          hints: firebase.firestore.FieldValue.arrayUnion(hint),
         });
         console.log(updatedHints);
       });
