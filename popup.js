@@ -39,6 +39,7 @@ function hideElements() {
   getPrerequisitesButton.style.display = "none";
   prerequisitesContainer.style.display = "none";
   addPrerequisitesButton.style.display = "none";
+  paragraph_Prerequisites.style.display = "none";
 }
 
 function showLogin() {
@@ -66,6 +67,7 @@ function showGetPrerequisite() {
   // hideElements();
   loginButton.style.display = "none";
   addPrerequisitesButton.style.display = "none";
+  paragraph_Prerequisites.style.display = "block";
 
   heading.textContent = "LeetAssist";
   prerequisitesContainer.style.display = "block";
