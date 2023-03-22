@@ -335,6 +335,81 @@ function addHint() {
   }
 }
 
+function addPrerequisite() {
+  const prerequisiteText = prompt("Enter prerequisite:");
+  if (prerequisiteText) {
+    const userId = auth.currentUser.uid;
+    const prerequisite = {
+      text: prerequisiteText,
+      score: 0,
+      userId: userId,
+    };
+
+    const tabsQuery = { active: true, currentWindow: true };
+    chrome.tabs.query(tabsQuery, (tabs) => {
+      const url = tabs[0].url;
+      console.log(url);
+
+      const regex = /\/problems\/(.+)\//;
+      const match = url.match(regex);
+      const problemId = match ? match[1] : null;
+      console.log(problemId);
+      const hintRef = db.collection("prerequisites").doc(problemId);
+      hintRef.get().then((doc) => {
+        if (doc.exists) {
+          const prerequisites = doc.data().prerequisites;
+          if (prerequisites && prerequisites.length > 0) {
+            const existingUserIds = prerequisites.map(
+              (prerequisite) => prerequisite.userId
+            );
+            if (existingUserIds.includes(userId)) {
+              alert(
+                "It is not possible to include an additional prerequisite, as you have already added contributed for this question. Thank you!"
+              );
+            } else {
+              hintRef
+                .update({
+                  prerequisites:
+                    firebase.firestore.FieldValue.arrayUnion(prerequisite),
+                })
+                .then(() => {
+                  alert(
+                    "prerequisite added successfully! Thank you for your contribution :)"
+                  );
+                })
+                .catch((error) => {
+                  console.error("Error adding prerequisite:", error);
+                });
+            }
+          } else {
+            hintRef
+              .set({ prerequisites: [prerequisite] })
+              .then(() => {
+                alert(
+                  "prerequisite added successfully! Thank you for your contribution :)"
+                );
+              })
+              .catch((error) => {
+                console.error("Error adding prerequisite:", error);
+              });
+          }
+        } else {
+          hintRef
+            .set({ prerequisites: [prerequisite] })
+            .then(() => {
+              alert(
+                "prerequisite added successfully! Thank you for your contribution :)"
+              );
+            })
+            .catch((error) => {
+              console.error("Error adding prerequisite:", error);
+            });
+        }
+      });
+    });
+  }
+}
+
 // function addHint() {
 //   const hintText = prompt("Enter hint:");
 //   if (hintText) {
@@ -464,6 +539,10 @@ auth.onAuthStateChanged((user) => {
             "Please navigate to a LeetCode problem page to use this extension.";
         }
       });
+    });
+
+    addPrerequisitesButton.addEventListener("click", () => {
+      addPrerequisite();
     });
   } else {
     showLogin();
