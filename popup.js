@@ -283,19 +283,91 @@ function addHint() {
       const problemId = match ? match[1] : null;
       console.log(problemId);
       const hintRef = db.collection("hints").doc(problemId);
-      hintRef
-        .update({
-          hints: firebase.firestore.FieldValue.arrayUnion(hint),
-        })
-        .then(() => {
-          alert("Hint added successfully!");
-        })
-        .catch((error) => {
-          console.error("Error adding hint:", error);
-        });
+      hintRef.get().then((doc) => {
+        if (doc.exists) {
+          const hints = doc.data().hints;
+          if (hints && hints.length > 0) {
+            const existingUserIds = hints.map((hint) => hint.userId);
+            if (existingUserIds.includes(userId)) {
+              alert(
+                "It is not possible to include an additional hint, as you have already added contributed for this question. Thank you!"
+              );
+            } else {
+              hintRef
+                .update({
+                  hints: firebase.firestore.FieldValue.arrayUnion(hint),
+                })
+                .then(() => {
+                  alert(
+                    "Hint added successfully! Thank you for your contribution :)"
+                  );
+                })
+                .catch((error) => {
+                  console.error("Error adding hint:", error);
+                });
+            }
+          } else {
+            hintRef
+              .set({ hints: [hint] })
+              .then(() => {
+                alert(
+                  "Hint added successfully! Thank you for your contribution :)"
+                );
+              })
+              .catch((error) => {
+                console.error("Error adding hint:", error);
+              });
+          }
+        } else {
+          hintRef
+            .set({ hints: [hint] })
+            .then(() => {
+              alert(
+                "Hint added successfully! Thank you for your contribution :)"
+              );
+            })
+            .catch((error) => {
+              console.error("Error adding hint:", error);
+            });
+        }
+      });
     });
   }
 }
+
+// function addHint() {
+//   const hintText = prompt("Enter hint:");
+//   if (hintText) {
+//     const userId = auth.currentUser.uid;
+//     const hint = {
+//       text: hintText,
+//       score: 0,
+//       userId: userId,
+//     };
+
+//     const tabsQuery = { active: true, currentWindow: true };
+//     chrome.tabs.query(tabsQuery, (tabs) => {
+//       const url = tabs[0].url;
+//       console.log(url);
+
+//       const regex = /\/problems\/(.+)\//;
+//       const match = url.match(regex);
+//       const problemId = match ? match[1] : null;
+//       console.log(problemId);
+//       const hintRef = db.collection("hints").doc(problemId);
+//       hintRef
+//         .update({
+//           hints: firebase.firestore.FieldValue.arrayUnion(hint),
+//         })
+//         .then(() => {
+//           alert("Hint added successfully!");
+//         })
+//         .catch((error) => {
+//           console.error("Error adding hint:", error);
+//         });
+//     });
+//   }
+// }
 
 function getProblemIdFromUrl() {
   const tabsQuery = { active: true, currentWindow: true };
