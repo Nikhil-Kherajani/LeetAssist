@@ -109,36 +109,24 @@ function showHint(hints) {
 
       const upButton = document.createElement("button");
       upButton.classList.add("hint-up-button");
-      upButton.textContent = "+";
+      upButton.textContent = "⬆️";
       upButton.addEventListener("click", () => {
         hintupdownbuttondisable = updateHintScore(
           hint,
-          parseInt(hint.score) + 1
+          parseInt(hint.score) + 1,
+          hintScore
         );
-        hintupdownbuttondisable.then(() => {
-          if (!hintupdownbuttondisable) {
-            hintScore.textContent = parseInt(hint.score) + 1;
-            // upButton.disabled = true;
-            hintupdownbuttondisable = true;
-          }
-        });
       });
 
       const downButton = document.createElement("button");
       downButton.classList.add("hint-down-button");
-      downButton.textContent = "-";
+      downButton.textContent = "⬇️";
       downButton.addEventListener("click", () => {
         hintupdownbuttondisable = updateHintScore(
           hint,
-          parseInt(hint.score) - 1
+          parseInt(hint.score) - 1,
+          hintScore
         );
-        hintupdownbuttondisable.then(() => {
-          if (!hintupdownbuttondisable) {
-            hintScore.textContent = parseInt(hint.score) - 1;
-            // downButton.disabled = true;
-            hintupdownbuttondisable = true;
-          }
-        });
       });
 
       hintDiv.appendChild(hintNumber);
@@ -167,8 +155,6 @@ function showPrerequisite(prerequisites) {
   console.log(prerequisites);
   if (prerequisites && prerequisites.length > 0) {
     prerequisites.forEach((Prerequisite, index) => {
-      let oneup = false,
-        onedown = false;
       const prerequisitediv = document.createElement("div");
       prerequisitediv.classList.add("prerequisite");
 
@@ -186,26 +172,24 @@ function showPrerequisite(prerequisites) {
 
       const upButton = document.createElement("button");
       upButton.classList.add("prerequisite-up-button");
-      upButton.textContent = "+";
+      upButton.textContent = "↑";
       upButton.addEventListener("click", () => {
-        updatePrerequisiteScore(Prerequisite, parseInt(Prerequisite.score) + 1);
-        if (!oneup) {
-          prerequisiteScore.textContent = parseInt(Prerequisite.score) + 1;
-          upButton.disabled = true;
-          oneup = true;
-        }
+        prerequisiteupdownbuttondisable = updatePrerequisiteScore(
+          Prerequisite,
+          parseInt(Prerequisite.score) + 1,
+          prerequisiteScore
+        );
       });
 
       const downButton = document.createElement("button");
       downButton.classList.add("prerequisite-down-button");
-      downButton.textContent = "-";
+      downButton.textContent = "↓";
       downButton.addEventListener("click", () => {
-        updatePrerequisiteScore(Prerequisite, parseInt(Prerequisite.score) - 1);
-        if (!onedown) {
-          prerequisiteScore.textContent = parseInt(Prerequisite.score) - 1;
-          downButton.disabled = true;
-          onedown = true;
-        }
+        prerequisiteupdownbuttondisable = updatePrerequisiteScore(
+          Prerequisite,
+          parseInt(Prerequisite.score) - 1,
+          prerequisiteScore
+        );
       });
 
       prerequisitediv.appendChild(prerequisiteNumber);
@@ -221,7 +205,8 @@ function showPrerequisite(prerequisites) {
   }
 }
 
-function updatePrerequisiteScore(prerequisite, newScore) {
+function updatePrerequisiteScore(prerequisite, newScore, button) {
+  const userId = auth.currentUser.uid;
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
     const url = tabs[0].url;
@@ -233,21 +218,41 @@ function updatePrerequisiteScore(prerequisite, newScore) {
     console.log(problemId);
 
     const prerequisiteRef = db.collection("prerequisites").doc(problemId);
-    const updatedprerequisites = prerequisiteRef
-      .update({
-        prerequisites: firebase.firestore.FieldValue.arrayRemove(prerequisite),
-      })
-      .then(() => {
-        prerequisite.score = newScore;
-        const updatedprerequisites = prerequisiteRef.update({
-          prerequisites: firebase.firestore.FieldValue.arrayUnion(prerequisite),
-        });
-        console.log(updatedprerequisites);
-      });
+
+    // Retrieve the userids array from the Firestore document
+    prerequisiteRef.get().then((doc) => {
+      if (doc.exists) {
+        const userids = doc.data().userIds || [];
+
+        // Check if the prerequisite's userid matches any of the values in the userids array
+        if (userids.includes(userId)) {
+          alert("You have already voted");
+          return true;
+        }
+
+        // Update the score for the prerequisite
+        const updatedprerequisites = prerequisiteRef
+          .update({
+            prerequisites:
+              firebase.firestore.FieldValue.arrayRemove(prerequisite),
+          })
+          .then(() => {
+            prerequisite.score = newScore;
+            const updatedprerequisites = prerequisiteRef.update({
+              prerequisites:
+                firebase.firestore.FieldValue.arrayUnion(prerequisite),
+              userIds: firebase.firestore.FieldValue.arrayUnion(userId), // Add the hint's userid to the userids array
+            });
+            button.textContent = newScore;
+            console.log(updatedprerequisites);
+            return false;
+          });
+      }
+    });
   });
 }
 
-function updateHintScore(hint, newScore) {
+function updateHintScore(hint, newScore, button) {
   const userId = auth.currentUser.uid;
   const tabsQuery = { active: true, currentWindow: true };
   chrome.tabs.query(tabsQuery, (tabs) => {
@@ -285,6 +290,7 @@ function updateHintScore(hint, newScore) {
             });
 
             console.log(updatedHints);
+            button.textContent = newScore;
             return false;
           });
       }
